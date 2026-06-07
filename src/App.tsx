@@ -29,10 +29,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const RAJAJINAGAR_BATCHES = [
   "TUE-THU 5PM Maanvi",
   "TUE-THU 6:30PM MAANVI",
-  "TUE-THU 6PM MAANVI",
+  "TUE-THU 6PM MAANVI ",
   "SAT-SUN 8:30AM ROHINI",
   "SAT-SUN 9:30AM ROHINI",
-  "SAT - SUN 7:30AM ROHINI",
+  "SAT - SUN 7:30AM  ROHINI",
   "TUE-THU 7:30PM RAJ"
 ];
 
