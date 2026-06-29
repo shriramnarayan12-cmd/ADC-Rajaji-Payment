@@ -169,12 +169,21 @@ export default function App() {
     }
   }, [availablePeriods]);
 
-  // 4. CLEAN Fee Calculation (No Fines, No Blocks, No Additions)
+  // 4. CLEAN Fee Calculation (With Custom Student Discounts)
   const calculatedAmount = useMemo(() => {
     if (!formData.batch_name || !selectedStudent || !formData.period) return 0;
     
-    const baseFee = batchFees[formData.batch_name] || 0;
+    // Step A: Start with the standard fee from the database
+    let baseFee = batchFees[formData.batch_name] || 0;
     
+    // Step B: Apply custom base fees based on exact Registration Numbers
+    if (selectedStudent.reg_no === 'ARK050') {
+      baseFee = 1500; // Ananya Dixit
+    } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016') {
+      baseFee = 2000; // Priya & Shriya Malavade
+    }
+    
+    // Step C: Apply the correct multiplier based on the period
     let multiplier = 1; 
     if (selectedStudent.payment_frequency === 'Quarterly') {
       if (formData.period === 'March') {
