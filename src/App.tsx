@@ -179,8 +179,8 @@ export default function App() {
     // Step B: Apply custom base fees based on exact Registration Numbers
     if (selectedStudent.reg_no === 'ARK050') {
       baseFee = 1500; // Ananya Dixit
-    } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016') {
-      baseFee = 2000; // Priya & Shriya Malavade
+    } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016' || selectedStudent.reg_no === 'ARK004') {
+      baseFee = 2000; // Priya, Shriya Malavade, & Mahathi
     }
     
     // Step C: Apply the correct multiplier based on the period
@@ -195,7 +195,6 @@ export default function App() {
     
     return baseFee * multiplier;
   }, [formData.batch_name, selectedStudent, batchFees, formData.period]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
