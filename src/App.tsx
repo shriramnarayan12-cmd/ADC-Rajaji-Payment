@@ -181,6 +181,8 @@ export default function App() {
       baseFee = 1500; // Ananya Dixit
     } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016' || selectedStudent.reg_no === 'ARK004') {
       baseFee = 2000; // Priya, Shriya Malavade, & Mahathi
+    } else if (selectedStudent.reg_no === 'ARK006') {
+      baseFee = 2300; // Lenisha
     }
     
     // Step C: Apply the correct multiplier based on the period
