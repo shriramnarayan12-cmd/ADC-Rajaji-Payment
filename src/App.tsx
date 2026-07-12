@@ -183,6 +183,8 @@ export default function App() {
       baseFee = 2000; // Priya, Shriya Malavade, & Mahathi
     } else if (selectedStudent.reg_no === 'ARK006') {
       baseFee = 2300; // Lenisha
+    }else if (selectedStudent.reg_no === 'ARK024' || selectedStudent.reg_no === 'ARK002') {
+      baseFee = 1300; // Saanvi 6pm, Sadhvi 5pm
     }
     
     // Step C: Apply the correct multiplier based on the period
