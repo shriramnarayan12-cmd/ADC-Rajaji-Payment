@@ -197,7 +197,11 @@ export default function App() {
       }
     }
     
-    return baseFee * multiplier;
+    // Step D: Apply ₹250 late fee if paid on or after the 15th of the month
+    const currentDay = new Date().getDate();
+    const lateFee = currentDay >= 15 ? 250 : 0;
+    
+    return (baseFee * multiplier) + lateFee;
   }, [formData.batch_name, selectedStudent, batchFees, formData.period]);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
