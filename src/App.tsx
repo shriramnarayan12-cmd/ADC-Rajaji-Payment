@@ -179,8 +179,8 @@ export default function App() {
     // Step B: Apply custom base fees based on exact Registration Numbers
     if (selectedStudent.reg_no === 'ARK050') {
       baseFee = 1500; // Ananya Dixit
-    } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016' || selectedStudent.reg_no === 'ARK004') {
-      baseFee = 2000; // Priya, Shriya Malavade, & Mahathi
+    } else if (selectedStudent.reg_no === 'ARK015' || selectedStudent.reg_no === 'ARK016' || selectedStudent.reg_no === 'ARK004' || selectedStudent.reg_no === 'ARK007') {
+      baseFee = 2000; // Priya, Shriya Malavade, & Mahathi & Akshara
     } else if (selectedStudent.reg_no === 'ARK006') {
       baseFee = 2300; // Lenisha
     }else if (selectedStudent.reg_no === 'ARK024' || selectedStudent.reg_no === 'ARK002') {
