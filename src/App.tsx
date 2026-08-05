@@ -197,9 +197,9 @@ export default function App() {
       }
     }
     
-    // Step D: Apply ₹250 late fee if paid on or after the 15th of the month
+    // Step D: Apply ₹250 late fee if paid on or after the 6th of the month
     const currentDay = new Date().getDate();
-    const lateFee = currentDay >= 15 ? 250 : 0;
+    const lateFee = currentDay >= 6 ? 250 : 0;
     
     return (baseFee * multiplier) + lateFee;
   }, [formData.batch_name, selectedStudent, batchFees, formData.period]);
