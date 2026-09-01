@@ -170,8 +170,8 @@ export default function App() {
   }, [availablePeriods]);
 
   // 4. CLEAN Fee Calculation (With Custom Student Discounts)
-  const calculatedAmount = useMemo(() => {
-    if (!formData.batch_name || !selectedStudent || !formData.period) return 0;
+  const feeCalculation = useMemo(() => {
+    if (!formData.batch_name || !selectedStudent || !formData.period) return { amount: 0, blocked: false, message: '' };
     
     // Step A: Start with the standard fee from the database
     let baseFee = batchFees[formData.batch_name] || 0;
@@ -183,7 +183,7 @@ export default function App() {
       baseFee = 2000; // Priya, Shriya Malavade, & Mahathi & Akshara
     } else if (selectedStudent.reg_no === 'ARK006') {
       baseFee = 2300; // Lenisha
-    }else if (selectedStudent.reg_no === 'ARK024' || selectedStudent.reg_no === 'ARK002') {
+    } else if (selectedStudent.reg_no === 'ARK024' || selectedStudent.reg_no === 'ARK002') {
       baseFee = 1300; // Saanvi 6pm, Sadhvi 5pm
     }
     
@@ -197,12 +197,37 @@ export default function App() {
       }
     }
     
-    // Step D: Apply ₹250 late fee if paid on or after the 6th of the month
-    const currentDay = new Date().getDate();
-    const lateFee = currentDay >= 6 ? 250 : 0;
+    let finalTotal = baseFee * multiplier;
     
-    return (baseFee * multiplier) + lateFee;
+    // Step D: Apply late fee rules and blocking logic
+    const currentDay = new Date().getDate();
+    let blocked = false;
+    let message = '';
+
+    const isQuarterlyMarch = selectedStudent.payment_frequency === 'Quarterly' && formData.period === 'March';
+    
+    if (selectedStudent.payment_frequency === 'Monthly' || isQuarterlyMarch) {
+      if (currentDay >= 9) {
+        blocked = true;
+        message = "Payment restricted. The deadline for this monthly fee payment has passed. Please contact the school directly to clear past dues.";
+      } else if (currentDay >= 6) {
+        finalTotal += 250;
+      }
+    } else if (selectedStudent.payment_frequency === 'Quarterly') {
+      if (currentDay > 30) {
+        blocked = true;
+        message = "Payment restricted. The deadline for this quarterly fee payment has passed (30th). Please contact the school directly to clear past dues.";
+      } else if (currentDay >= 22) {
+        finalTotal += 500;
+      } else if (currentDay >= 16) {
+        finalTotal += 250;
+      }
+    }
+    
+    return { amount: finalTotal, blocked, message };
   }, [formData.batch_name, selectedStudent, batchFees, formData.period]);
+
+  const calculatedAmount = feeCalculation.amount;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -372,101 +397,116 @@ export default function App() {
               )}
             </div>
 
-            {/* Amount Due Display (No blocking warnings needed) */}
-            <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 text-center my-6">
-              <p className="text-sm font-medium text-blue-800 mb-1 uppercase tracking-wider">Amount Due</p>
-              <p className="text-4xl font-bold text-blue-900">
-                ₹{calculatedAmount.toLocaleString('en-IN')}
-              </p>
-              {selectedStudent && (
-                <p className="text-xs text-blue-600 mt-2">
-                  Based on {selectedStudent.payment_frequency} frequency
-                </p>
-              )}
-            </div>
+            {/* --- DYNAMIC PAYMENT SECTION --- */}
+            {formData.period && (
+              <>
+                {feeCalculation.blocked ? (
+                  <div className="bg-red-50 rounded-xl p-6 border border-red-200 text-center my-6 shadow-sm">
+                    <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                    <p className="text-base font-bold text-red-800 mb-1">Payment Blocked</p>
+                    <p className="text-sm text-red-600 font-medium">{feeCalculation.message}</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Amount Due Display */}
+                    <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 text-center my-6">
+                      <p className="text-sm font-medium text-blue-800 mb-1 uppercase tracking-wider">Amount Due</p>
+                      <p className="text-4xl font-bold text-blue-900">
+                        ₹{calculatedAmount.toLocaleString('en-IN')}
+                      </p>
+                      {selectedStudent && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          Based on {selectedStudent.payment_frequency} frequency
+                        </p>
+                      )}
+                    </div>
 
-            {/* STATIC QR CODE & INSTRUCTIONS */}
-            <div className="border border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center bg-white shadow-sm my-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">Payment Details</h2>
+                    {/* STATIC QR CODE & INSTRUCTIONS */}
+                    <div className="border border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center bg-white shadow-sm my-6">
+                      <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">Payment Details</h2>
 
-              <img 
-                src={RAJAJINAGAR_ACCOUNT.qrBase64} 
-                alt={`${RAJAJINAGAR_ACCOUNT.name} QR Code`} 
-                className="w-48 h-48 object-contain mb-4 border-4 border-gray-50 rounded-lg p-2 bg-white"
-              />
-              
-              <a 
-                href={RAJAJINAGAR_ACCOUNT.qrBase64} 
-                download={RAJAJINAGAR_ACCOUNT.fileName}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors mb-6 text-sm text-center w-full max-w-xs"
-              >
-                Download QR to Gallery
-              </a>
+                      <img 
+                        src={RAJAJINAGAR_ACCOUNT.qrBase64} 
+                        alt={`${RAJAJINAGAR_ACCOUNT.name} QR Code`} 
+                        className="w-48 h-48 object-contain mb-4 border-4 border-gray-50 rounded-lg p-2 bg-white"
+                      />
+                      
+                      <a 
+                        href={RAJAJINAGAR_ACCOUNT.qrBase64} 
+                        download={RAJAJINAGAR_ACCOUNT.fileName}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors mb-6 text-sm text-center w-full max-w-xs"
+                      >
+                        Download QR to Gallery
+                      </a>
 
-              <div className="bg-blue-50 rounded-lg p-4 w-full border border-blue-100">
-                <p className="text-sm font-bold text-blue-900 mb-2">How to Pay:</p>
-                <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside text-left mb-4">
-                  <li>Tap the <strong>Blue button</strong> above to save the QR.</li>
-                  <li>Open <strong>GPay</strong> or <strong>PhonePe</strong>.</li>
-                  <li>Choose <strong>"Scan Any QR"</strong>.</li>
-                  <li>Tap the <strong>Gallery/Image icon</strong> and select the QR you just saved.</li>
-                </ol>
-                
-                <div className="mt-3 p-3 bg-white rounded border border-blue-200 text-left text-xs text-blue-900 space-y-1.5">
-                  <p className="font-bold text-sm mb-1 text-blue-950 border-b border-blue-100 pb-1">Account Details</p>
-                  <p><span className="font-semibold text-gray-600">Name:</span> {RAJAJINAGAR_ACCOUNT.name}</p>
-                  <p><span className="font-semibold text-gray-600">Acc Num:</span> {RAJAJINAGAR_ACCOUNT.accNum}</p>
-                  <p><span className="font-semibold text-gray-600">IFSC Code:</span> {RAJAJINAGAR_ACCOUNT.ifsc}</p>
-                  <p><span className="font-semibold text-gray-600">Type of Account:</span> {RAJAJINAGAR_ACCOUNT.type}</p>
-                  <p><span className="font-semibold text-gray-600">UPI Id:</span> {RAJAJINAGAR_ACCOUNT.upi}</p>
-                </div>
-              </div>
-            </div>
+                      <div className="bg-blue-50 rounded-lg p-4 w-full border border-blue-100">
+                        <p className="text-sm font-bold text-blue-900 mb-2">How to Pay:</p>
+                        <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside text-left mb-4">
+                          <li>Tap the <strong>Blue button</strong> above to save the QR.</li>
+                          <li>Open <strong>GPay</strong> or <strong>PhonePe</strong>.</li>
+                          <li>Choose <strong>"Scan Any QR"</strong>.</li>
+                          <li>Tap the <strong>Gallery/Image icon</strong> and select the QR you just saved.</li>
+                        </ol>
+                        
+                        <div className="mt-3 p-3 bg-white rounded border border-blue-200 text-left text-xs text-blue-900 space-y-1.5">
+                          <p className="font-bold text-sm mb-1 text-blue-950 border-b border-blue-100 pb-1">Account Details</p>
+                          <p><span className="font-semibold text-gray-600">Name:</span> {RAJAJINAGAR_ACCOUNT.name}</p>
+                          <p><span className="font-semibold text-gray-600">Acc Num:</span> {RAJAJINAGAR_ACCOUNT.accNum}</p>
+                          <p><span className="font-semibold text-gray-600">IFSC Code:</span> {RAJAJINAGAR_ACCOUNT.ifsc}</p>
+                          <p><span className="font-semibold text-gray-600">Type of Account:</span> {RAJAJINAGAR_ACCOUNT.type}</p>
+                          <p><span className="font-semibold text-gray-600">UPI Id:</span> {RAJAJINAGAR_ACCOUNT.upi}</p>
+                        </div>
+                      </div>
+                    </div>
 
-            {/* Transaction ID Input (Smart Box) */}
-            <div>
-              <label htmlFor="txn_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Transaction ID / Bank Reference
-              </label>
-              <input
-                type="text"
-                id="txn_id"
-                name="txn_id"
-                value={formData.txn_id}
-                onChange={handleInputChange}
-                placeholder="e.g. 123456789012 or SBIN123456"
-                maxLength={/^\d*$/.test(formData.txn_id) ? 12 : 22}
-                minLength={/^\d*$/.test(formData.txn_id) ? 12 : 6}
-                pattern={/^\d*$/.test(formData.txn_id) ? "\\d{12}" : "[a-zA-Z0-9]{6,22}"}
-                title={/^\d*$/.test(formData.txn_id) ? "UPI must be exactly 12 digits" : "Bank Reference must be 6 to 22 characters (letters and numbers only)"}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
-                required
-              />
-              
-              {/* Dynamic Helper Text */}
-              {formData.txn_id && (
-                <p className={`text-xs mt-1.5 font-medium ${/^\d*$/.test(formData.txn_id) ? (formData.txn_id.length === 12 ? 'text-green-600' : 'text-amber-600') : 'text-green-600'}`}>
-                  {/^\d*$/.test(formData.txn_id) 
-                    ? (formData.txn_id.length === 12 ? "✓ 12-Digit UPI ID detected." : `UPI ID: ${formData.txn_id.length}/12 digits entered.`) 
-                    : "✓ Bank Reference Number detected."}
-                </p>
-              )}
-            </div>
+                    {/* Transaction ID Input (Smart Box) */}
+                    <div>
+                      <label htmlFor="txn_id" className="block text-sm font-medium text-gray-700 mb-1">
+                        Transaction ID / Bank Reference
+                      </label>
+                      <input
+                        type="text"
+                        id="txn_id"
+                        name="txn_id"
+                        value={formData.txn_id}
+                        onChange={handleInputChange}
+                        placeholder="e.g. 123456789012 or SBIN123456"
+                        maxLength={/^\d*$/.test(formData.txn_id) ? 12 : 22}
+                        minLength={/^\d*$/.test(formData.txn_id) ? 12 : 6}
+                        pattern={/^\d*$/.test(formData.txn_id) ? "\\d{12}" : "[a-zA-Z0-9]{6,22}"}
+                        title={/^\d*$/.test(formData.txn_id) ? "UPI must be exactly 12 digits" : "Bank Reference must be 6 to 22 characters (letters and numbers only)"}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
+                        required
+                      />
+                      
+                      {/* Dynamic Helper Text */}
+                      {formData.txn_id && (
+                        <p className={`text-xs mt-1.5 font-medium ${/^\d*$/.test(formData.txn_id) ? (formData.txn_id.length === 12 ? 'text-green-600' : 'text-amber-600') : 'text-green-600'}`}>
+                          {/^\d*$/.test(formData.txn_id) 
+                            ? (formData.txn_id.length === 12 ? "✓ 12-Digit UPI ID detected." : `UPI ID: ${formData.txn_id.length}/12 digits entered.`) 
+                            : "✓ Bank Reference Number detected."}
+                        </p>
+                      )}
+                    </div>
 
-            <button
-              type="submit"
-              disabled={submitting || !calculatedAmount}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed mt-4 flex justify-center items-center"
-            >
-              {submitting ? (
-                <>
-                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                'Submit Payment Details'
-              )}
-            </button>
+                    <button
+                      type="submit"
+                      disabled={submitting || !calculatedAmount}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed mt-4 flex justify-center items-center"
+                    >
+                      {submitting ? (
+                        <>
+                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        'Submit Payment Details'
+                      )}
+                    </button>
+                  </>
+                )}
+              </>
+            )}
           </form>
         </div>
       </div>
